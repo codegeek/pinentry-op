@@ -18,3 +18,11 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - run: cargo build --locked --release
+      - name: Install GnuPG
+        run: command -v gpg || brew install gnupg
+      # Real gpg-agent signing and decryption through the release binary,
+      # with the fake op CLI and fallback pinentry from tests/fixtures.
+      - name: GPG smoke test
+        run: gpg --version | head -1 && python3 tests/gpg_smoke.py
+        env:
+          PINENTRY_OP_TEST_BINARY: target/release/pinentry-op

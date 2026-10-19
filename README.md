@@ -1,13 +1,20 @@
 # pinentry-op
 
 A Rust pinentry bridge that supplies GPG key passphrases from the official
-1Password CLI. Built for decryption and signing on macOS, with a normal pinentry
-handling manual entry and other interactions. Unix platforms only.
+1Password CLI, for decryption and signing, with a normal pinentry handling
+manual entry and other interactions. Supports macOS and Linux; Unix platforms only.
 
 ```text
 gpg → gpg-agent → pinentry-op → op read → 1Password
-                        └──→ pinentry-mac (manual prompts)
+                        └──→ fallback pinentry (manual prompts)
 ```
+
+The fallback is `pinentry-mac` on macOS, or a desktop or terminal pinentry such
+as `pinentry-gnome3`, `pinentry-qt` or `pinentry-curses` on Linux.
+
+Linux support is newer. On Linux, the automated tests and a real-GPG smoke test
+pass in CI with a fake 1Password CLI, but it has not yet been verified with the
+1Password desktop app.
 
 GnuPG keeps your private keys and performs decryption and signing. This program
 retrieves only their passphrases. Public-key encryption ordinarily needs no
@@ -15,7 +22,9 @@ passphrase. Symmetric passphrases use the fallback prompt.
 
 ## Install
 
-With Homebrew on macOS (Apple Silicon or Intel):
+### Homebrew (macOS or Linux)
+
+On macOS (Apple Silicon or Intel) or with Homebrew on Linux (x86_64 or ARM64):
 
 ```sh
 brew install codegeek/tap/pinentry-op
@@ -23,13 +32,29 @@ brew install codegeek/tap/pinentry-op
 
 This installs `pinentry-op` at `$(brew --prefix)/bin/pinentry-op`, a path that
 stays the same across upgrades, and an example configuration at
-`$(brew --prefix)/share/pinentry-op/config.example.toml`. Install GnuPG, the
-1Password CLI and pinentry-mac separately:
+`$(brew --prefix)/share/pinentry-op/config.example.toml`. On macOS, install
+GnuPG, the 1Password CLI and pinentry-mac separately:
 
 ```sh
 brew install gnupg pinentry-mac
 brew install --cask 1password-cli
 ```
+
+On Linux, install GnuPG and a pinentry from your distribution, and the 1Password
+CLI from [1Password's package repository](https://developer.1password.com/docs/cli/get-started/).
+
+### Arch Linux (AUR)
+
+```sh
+yay -S pinentry-op    # or any AUR helper, or makepkg with packaging/aur/PKGBUILD
+```
+
+This installs `/usr/bin/pinentry-op` and an example configuration at
+`/usr/share/doc/pinentry-op/config.example.toml`. The `gnupg` package already
+pulls in `pinentry`, which provides `pinentry-gnome3`, `pinentry-qt` and
+`pinentry-curses`. The 1Password CLI is the AUR package `1password-cli`.
+
+### Prebuilt archives
 
 Prebuilt archives with SHA-256 checksums are also attached to each
 [GitHub release](https://github.com/codegeek/pinentry-op/releases). To build
@@ -38,7 +63,8 @@ from source instead, see [Build and verify](#build-and-verify).
 ## Requirements
 
 - Rust 1.85 or newer to build from source (latest stable recommended).
-- GnuPG, the official `op` CLI, and a fallback pinentry such as `pinentry-mac`.
+- GnuPG, the official `op` CLI, and a fallback pinentry such as `pinentry-mac`
+  (macOS) or `pinentry-gnome3`, `pinentry-qt` or `pinentry-curses` (Linux).
 - 1Password desktop app with **Settings → Developer → Integrate with 1Password CLI** enabled.
 - Python 3 for subprocess tests; GnuPG for the optional real-GPG smoke test.
 
@@ -72,7 +98,8 @@ Find your installed executable paths and keygrips:
 
 ```sh
 command -v op
-command -v pinentry-mac
+command -v pinentry-mac      # macOS
+command -v pinentry-gnome3   # Linux; or pinentry-qt, pinentry-curses
 gpg --with-keygrip --list-secret-keys
 ```
 
@@ -101,7 +128,10 @@ timeout_seconds = 120
 "89ABCDEF0123456789ABCDEF0123456789ABCDEF" = "op://VAULT_ID/ITEM_ID/password"
 ```
 
-These paths are examples for Apple Silicon Homebrew. Executables must use
+These paths are examples for Apple Silicon Homebrew. On Linux, `op` is usually
+`/usr/bin/op` and the fallback something like `/usr/bin/pinentry-gnome3`. Use
+`pinentry-curses` only if you always use GPG from a terminal: it cannot prompt
+when there is no terminal, for example when an editor or Git GUI signs a commit. Executables must use
 absolute paths, without shell substitutions. Prefer vault and item IDs in secret
 references to survive renames. The configuration contains references, not secrets;
 keep it writable only by your user. Unknown TOML fields are rejected.
@@ -118,6 +148,9 @@ the installed executable. With Homebrew on Apple Silicon, that is:
 ```text
 pinentry-program /opt/homebrew/bin/pinentry-op
 ```
+
+From the AUR, use `/usr/bin/pinentry-op`; with Homebrew on Linux,
+`/home/linuxbrew/.linuxbrew/bin/pinentry-op`.
 
 If you build from source, copy `target/release/pinentry-op` to a stable path of
 your choice and use that path. Avoid pointing at the build directory, which
@@ -192,11 +225,21 @@ Releases are built by [dist](https://opensource.axo.dev/cargo-dist/) in
    and commit.
 2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
 
-The workflow builds macOS archives for both architectures, creates the GitHub
-release, and pushes the updated formula to
+The workflow builds archives for macOS and Linux (x86_64 and ARM64), creates the
+GitHub release, and pushes the updated formula to
 [codegeek/homebrew-tap](https://github.com/codegeek/homebrew-tap) using the
 `HOMEBREW_TAP_TOKEN` repository secret. After changing `dist-workspace.toml`,
 run `dist generate` to update the workflow, and `dist plan` to preview a release.
+
+The AUR package is maintained separately from the release workflow. After the
+GitHub release exists, on an Arch system:
+
+1. In `packaging/aur/PKGBUILD`, set `pkgver` to the new version and `pkgrel=1`.
+2. Run `updpkgsums` to record the release tarball's checksum, then
+   `makepkg --cleanbuild` to build and test, and
+   `makepkg --printsrcinfo > .SRCINFO`.
+3. Commit both files here, then copy them into your clone of
+   `ssh://aur@aur.archlinux.org/pinentry-op.git`, commit and push.
 
 ## References
 

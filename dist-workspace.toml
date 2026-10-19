@@ -10,8 +10,9 @@ ci = "github"
 # The installers to generate for each app
 installers = ["homebrew"]
 # Target platforms to build apps for (Rust target-triple syntax)
-# macOS only: the README documents macOS with pinentry-mac, and non-Unix targets do not compile.
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin"]
+# Unix only: non-Unix targets do not compile. Linux uses glibc builds, which the
+# generated Homebrew formula expects for Homebrew on Linux.
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu"]
 # Where to host releases
 hosting = "github"
 # A GitHub repo to push Homebrew formulas to

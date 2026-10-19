@@ -1,0 +1,44 @@
+# Maintainer: Guillermo Castro <github at codegeek dot dev>
+pkgname=pinentry-op
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="GnuPG pinentry bridge to the official 1Password CLI"
+arch=('x86_64' 'aarch64')
+url="https://github.com/codegeek/pinentry-op"
+license=('MIT')
+depends=('glibc' 'libgcc' 'gnupg')
+makedepends=('cargo')
+checkdepends=('python')
+# The release profile already strips the binary, so a debug package would be empty.
+options=('!debug')
+optdepends=('1password-cli: the op CLI used to read passphrases (AUR)')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+# Run updpkgsums after changing pkgver: the release tarball must exist first.
+sha256sums=('SKIP')
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo test --frozen
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm0755 -t "$pkgdir/usr/bin/" "target/release/$pkgname"
+  install -Dm0644 -t "$pkgdir/usr/share/licenses/$pkgname/" LICENSE
+  install -Dm0644 -t "$pkgdir/usr/share/doc/$pkgname/" README.md config.example.toml
+}
