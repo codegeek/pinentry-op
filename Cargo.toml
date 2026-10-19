@@ -1,0 +1,17 @@
+[package]
+name = "pinentry-op"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "GnuPG pinentry bridge to the official 1Password CLI"
+license = "MIT"
+
+[dependencies]
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+zeroize = "1"
+
+[profile.release]
+lto = true
+strip = true

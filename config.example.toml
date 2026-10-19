@@ -1,0 +1,13 @@
+# Replace executable paths with the output of:
+# command -v op
+# command -v pinentry-mac
+op_program = "/opt/homebrew/bin/op"
+fallback_program = "/opt/homebrew/bin/pinentry-mac"
+timeout_seconds = 120
+# account = "YOUR_ACCOUNT_ID"
+
+# gpg --with-keygrip --list-secret-keys
+# Use the keygrip of each encryption subkey, not its OpenPGP fingerprint or ID.
+# Prefer vault/item IDs in references so renaming entries does not break lookup.
+[keys]
+"0123456789ABCDEF0123456789ABCDEF01234567" = "op://VAULT_ID/ITEM_ID/password"
