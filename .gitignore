@@ -3,3 +3,8 @@
 /.worktrees/
 /config.toml
 /.idea/
+# makepkg output when building packaging/aur/PKGBUILD in place
+/packaging/aur/src/
+/packaging/aur/pkg/
+/packaging/aur/*.tar.gz
+/packaging/aur/*.pkg.tar.*
