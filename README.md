@@ -1,7 +1,7 @@
 # pinentry-op
 
 A Rust pinentry bridge that supplies GPG key passphrases from the official
-1Password CLI. Built for public-key decryption on macOS, with a normal pinentry
+1Password CLI. Built for decryption and signing on macOS, with a normal pinentry
 handling manual entry and other interactions. Unix platforms only.
 
 ```text
@@ -9,7 +9,7 @@ gpg → gpg-agent → pinentry-op → op read → 1Password
                         └──→ pinentry-mac (manual prompts)
 ```
 
-GnuPG keeps your private keys and performs encryption/decryption. This program
+GnuPG keeps your private keys and performs decryption and signing. This program
 retrieves only their passphrases. Public-key encryption ordinarily needs no
 passphrase. Symmetric passphrases use the fallback prompt.
 
@@ -32,14 +32,16 @@ cargo build --release
 The subprocess tests use fake `op` and pinentry executables and synthetic secrets.
 They never open your vault or change your GPG configuration.
 
-For a real encryption/decryption roundtrip, first run `cargo build`, then:
+For a real signing and decryption roundtrip, first run `cargo build`, then:
 
 ```sh
 python3 tests/gpg_smoke.py
 ```
 
-This creates an isolated, disposable GPG keyring with an encryption subkey, clears
-its agent cache, and decrypts through pinentry-op with the fake CLI. It does not
+This creates an isolated, disposable GPG keyring with a signing primary key and an
+encryption subkey. With the agent cache cleared each time, it signs and then
+decrypts through pinentry-op with the fake CLI. It checks that each operation
+looked up the 1Password reference mapped to that key's own keygrip. It does not
 test actual 1Password desktop authentication; verify that separately after setup.
 
 ## Configure
@@ -53,10 +55,16 @@ gpg --with-keygrip --list-secret-keys
 ```
 
 Copy `config.example.toml` to `~/.config/pinentry-op/config.toml`. Replace the
-executable paths and example keygrip. Each keygrip is a 40-character uppercase
-hex string. Use the **encryption subkey's keygrip**, which differs from the primary
-keygrip and from the OpenPGP fingerprint. Multiple keygrips may reference the
-same password field.
+executable paths and example keygrips. Each keygrip is a 40-character uppercase
+hex string, distinct from the OpenPGP fingerprint and key ID.
+
+GnuPG asks for a passphrase per key, identified by keygrip, so add an entry for
+**every key you use**. Decryption needs the encryption subkey (`[E]`). Signing
+needs the signing subkey (`[S]`) if there is one, otherwise the primary key
+(usually `[SC]`). The primary key and each subkey have different keygrips. When
+one passphrase protects them all, as it usually does, point every keygrip at the
+same 1Password reference. gpg-agent caches each keygrip separately, so signing
+and then decrypting may contact 1Password twice.
 
 ```toml
 op_program = "/opt/homebrew/bin/op"
@@ -65,7 +73,10 @@ timeout_seconds = 120
 # account = "YOUR_ACCOUNT_ID"
 
 [keys]
+# Primary key [SC]: used for signing when there is no signing subkey.
 "0123456789ABCDEF0123456789ABCDEF01234567" = "op://VAULT_ID/ITEM_ID/password"
+# Encryption subkey [E].
+"89ABCDEF0123456789ABCDEF0123456789ABCDEF" = "op://VAULT_ID/ITEM_ID/password"
 ```
 
 These paths are examples for Apple Silicon Homebrew. Executables must use
@@ -92,7 +103,7 @@ Restart the agent to use the change:
 gpgconf --kill gpg-agent
 ```
 
-This clears the agent's in-memory passphrase cache. A mapped decryption should
+This clears the agent's in-memory passphrase cache. A mapped decryption or signature should
 then request the password through 1Password as needed by its authorization
 policy. If GnuPG disables external password caching (for example with
 `no-allow-external-cache` in agent configuration), the normal prompt is used.
@@ -142,7 +153,7 @@ own configured caching policies.
 1Password authorization happens through its official CLI integration. A
 background `gpg-agent` may have a different authorization context from your
 terminal. Working terminal CLI access does not guarantee agent access; verify
-the actual decryption flow. This wrapper does not implement biometric UI or
+the actual decryption and signing flows. This wrapper does not implement biometric UI or
 manage service-account tokens. It currently has no vault item picker, automatic
 key discovery, secret updates, or Windows support.
 

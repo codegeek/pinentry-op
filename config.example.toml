@@ -7,7 +7,13 @@ timeout_seconds = 120
 # account = "YOUR_ACCOUNT_ID"
 
 # gpg --with-keygrip --list-secret-keys
-# Use the keygrip of each encryption subkey, not its OpenPGP fingerprint or ID.
+# Add the keygrip (not the OpenPGP fingerprint or ID) of every key you use:
+# the encryption subkey [E] for decryption, and the signing subkey [S] or, if
+# there is none, the primary key [SC] for signing. Keys sharing a passphrase
+# can share a reference.
 # Prefer vault/item IDs in references so renaming entries does not break lookup.
 [keys]
+# Primary key [SC]
 "0123456789ABCDEF0123456789ABCDEF01234567" = "op://VAULT_ID/ITEM_ID/password"
+# Encryption subkey [E]
+"89ABCDEF0123456789ABCDEF0123456789ABCDEF" = "op://VAULT_ID/ITEM_ID/password"
