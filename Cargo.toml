@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.85"
 description = "GnuPG pinentry bridge to the official 1Password CLI"
 license = "MIT"
+repository = "https://github.com/codegeek/pinentry-op"
 
 [dependencies]
 libc = "0.2"
