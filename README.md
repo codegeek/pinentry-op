@@ -43,10 +43,16 @@ brew install --cask 1password-cli
 On Linux, install GnuPG and a pinentry from your distribution, and the 1Password
 CLI from [1Password's package repository](https://developer.1password.com/docs/cli/get-started/).
 
-### Arch Linux (AUR)
+### Arch Linux
+
+The package is not on the AUR yet. Build and install it from the PKGBUILD in
+this repository; `makepkg` downloads the tagged release source, checks its
+SHA-256 checksum and runs the test suite:
 
 ```sh
-yay -S pinentry-op    # or any AUR helper, or makepkg with packaging/aur/PKGBUILD
+git clone https://github.com/codegeek/pinentry-op
+cd pinentry-op/packaging/aur
+makepkg -si
 ```
 
 This installs `/usr/bin/pinentry-op` and an example configuration at
@@ -152,7 +158,7 @@ the installed executable. With Homebrew on Apple Silicon, that is:
 pinentry-program /opt/homebrew/bin/pinentry-op
 ```
 
-From the AUR, use `/usr/bin/pinentry-op`; with Homebrew on Linux,
+With the Arch package, use `/usr/bin/pinentry-op`; with Homebrew on Linux,
 `/home/linuxbrew/.linuxbrew/bin/pinentry-op`.
 
 If you build from source, copy `target/release/pinentry-op` to a stable path of
@@ -241,15 +247,16 @@ GitHub release, and pushes the updated formula to
 `HOMEBREW_TAP_TOKEN` repository secret. After changing `dist-workspace.toml`,
 run `dist generate` to update the workflow, and `dist plan` to preview a release.
 
-The AUR package is maintained separately from the release workflow. After the
+The Arch package is maintained separately from the release workflow. After the
 GitHub release exists, on an Arch system:
 
 1. In `packaging/aur/PKGBUILD`, set `pkgver` to the new version and `pkgrel=1`.
 2. Run `updpkgsums` to record the release tarball's checksum, then
    `makepkg --cleanbuild` to build and test, and
    `makepkg --printsrcinfo > .SRCINFO`.
-3. Commit both files here, then copy them into your clone of
-   `ssh://aur@aur.archlinux.org/pinentry-op.git`, commit and push.
+3. Commit both files here. Once the package is published on the AUR, also copy
+   them into your clone of `ssh://aur@aur.archlinux.org/pinentry-op.git`,
+   commit and push.
 
 ## References
 
