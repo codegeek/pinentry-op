@@ -6,6 +6,11 @@ fallback_program = "/opt/homebrew/bin/pinentry-mac"
 timeout_seconds = 120
 # account = "YOUR_ACCOUNT_ID"
 
+# When op fails or times out, including when the 1Password app is not running:
+# "cancel" (default) cancels the request; "prompt" opens the fallback pinentry,
+# which also happens after you cancel the 1Password prompt.
+# on_lookup_failure = "cancel"
+
 # gpg --with-keygrip --list-secret-keys
 # Add the keygrip (not the OpenPGP fingerprint or ID) of every key you use:
 # the encryption subkey [E] for decryption, and the signing subkey [S] or, if

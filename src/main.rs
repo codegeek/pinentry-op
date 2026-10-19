@@ -6,7 +6,7 @@ mod fallback;
 mod protocol;
 mod secret;
 
-use config::Config;
+use config::{Config, LookupFailure};
 use fallback::Fallback;
 use protocol::{read_line, send, send_secret, split, State, CANCELED};
 use secret::LookupError;
@@ -78,12 +78,19 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                             send_secret(&mut output, &secret)?;
                             continue;
                         }
-                        Err(LookupError::Failed) => {
+                        Err(LookupError::Failed)
+                            if config.on_lookup_failure == LookupFailure::Cancel =>
+                        {
                             // CLI failures cannot reliably distinguish cancellation
                             // across versions: fail closed rather than open a new UI.
                             eprintln!("pinentry-op: 1Password lookup failed or was cancelled");
                             send(&mut output, CANCELED.as_bytes())?;
                             continue;
+                        }
+                        Err(LookupError::Failed) => {
+                            eprintln!(
+                                "pinentry-op: 1Password lookup failed or was cancelled; prompting manually"
+                            );
                         }
                         Err(LookupError::Unavailable) => {
                             eprintln!(

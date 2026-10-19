@@ -10,7 +10,21 @@ pub struct Config {
     #[serde(default = "default_timeout")]
     pub timeout_seconds: u64,
     #[serde(default)]
+    pub on_lookup_failure: LookupFailure,
+    #[serde(default)]
     pub keys: BTreeMap<String, String>,
+}
+
+// What to do when op fails or times out. Its exit status is the same for a
+// cancelled prompt and an unreachable 1Password app, so this is a user choice.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum LookupFailure {
+    // Return a cancellation error: cancelling 1Password never opens a second prompt.
+    #[default]
+    Cancel,
+    // Open the fallback pinentry, e.g. when the 1Password app is not running.
+    Prompt,
 }
 
 fn default_timeout() -> u64 {
@@ -69,6 +83,16 @@ mod tests {
             "op_program='/op'\nfallback_program='/fallback'\ntimeout_second=4"
         )
         .is_err());
+    }
+
+    #[test]
+    fn lookup_failure_policy_defaults_to_cancel() {
+        let base = "op_program='/op'\nfallback_program='/fallback'\n";
+        let config: Config = toml::from_str(base).unwrap();
+        assert_eq!(config.on_lookup_failure, LookupFailure::Cancel);
+        let config: Config = toml::from_str(&format!("{base}on_lookup_failure='prompt'")).unwrap();
+        assert_eq!(config.on_lookup_failure, LookupFailure::Prompt);
+        assert!(toml::from_str::<Config>(&format!("{base}on_lookup_failure='fallback'")).is_err());
     }
 
     #[test]

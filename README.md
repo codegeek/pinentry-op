@@ -12,9 +12,9 @@ gpg → gpg-agent → pinentry-op → op read → 1Password
 The fallback is `pinentry-mac` on macOS, or a desktop or terminal pinentry such
 as `pinentry-gnome3`, `pinentry-qt` or `pinentry-curses` on Linux.
 
-Linux support is newer. On Linux, the automated tests and a real-GPG smoke test
-pass in CI with a fake 1Password CLI, but it has not yet been verified with the
-1Password desktop app.
+On Linux, signing and decryption have been verified with the 1Password desktop
+app on an Arch-based KDE/GNOME desktop (CachyOS), and the automated tests and a
+real-GPG smoke test run in CI on Ubuntu.
 
 GnuPG keeps your private keys and performs decryption and signing. This program
 retrieves only their passphrases. Public-key encryption ordinarily needs no
@@ -120,6 +120,7 @@ op_program = "/opt/homebrew/bin/op"
 fallback_program = "/opt/homebrew/bin/pinentry-mac"
 timeout_seconds = 120
 # account = "YOUR_ACCOUNT_ID"
+# on_lookup_failure = "cancel"   # or "prompt"; see below
 
 [keys]
 # Primary key [SC]: used for signing when there is no signing subkey.
@@ -129,9 +130,11 @@ timeout_seconds = 120
 ```
 
 These paths are examples for Apple Silicon Homebrew. On Linux, `op` is usually
-`/usr/bin/op` and the fallback something like `/usr/bin/pinentry-gnome3`. Use
-`pinentry-curses` only if you always use GPG from a terminal: it cannot prompt
-when there is no terminal, for example when an editor or Git GUI signs a commit. Executables must use
+`/usr/bin/op` and the fallback something like `/usr/bin/pinentry-gnome3`, or
+`/usr/bin/pinentry` where that is a wrapper choosing the right pinentry for the
+desktop (as on Arch-based systems). Use `pinentry-curses` only if you always use
+GPG from a terminal: it cannot prompt when there is no terminal, for example
+when an editor or Git GUI signs a commit. Executables must use
 absolute paths, without shell substitutions. Prefer vault and item IDs in secret
 references to survive renames. The configuration contains references, not secrets;
 keep it writable only by your user. Unknown TOML fields are rejected.
@@ -180,10 +183,17 @@ To restore your previous setup, restore the old `pinentry-program` line and run
 - **Missing mappings, symmetric operations, new passphrases, confirmations and
   protocol extensions:** delegate to the fallback. A persistent fallback receives
   all prompt state and handles inquiries such as passphrase-quality checks.
-- **CLI cancellation or failure:** if `op` exits unsuccessfully or times out,
-  return a cancellation error rather than opening a second prompt, because a
-  cancelled 1Password request cannot be told apart from other failures. CLI
-  failures are deliberately not classified from human-readable error text.
+- **CLI cancellation or failure:** `op` exits with the same status whether you
+  cancel its prompt, the 1Password app is not running, or the lookup fails for
+  another reason, and its human-readable error text is deliberately not parsed.
+  So `on_lookup_failure` decides what happens when `op` exits unsuccessfully or
+  times out:
+  - `"cancel"` (default): return a cancellation error. Cancelling the
+    1Password prompt never opens a second prompt, but nor does a 1Password app
+    that is not running.
+  - `"prompt"`: open the fallback pinentry instead, so you can type the
+    passphrase when 1Password is unavailable. Cancelling the 1Password prompt
+    then also leads to a manual prompt.
 - **CLI unavailable or unusable secret:** if `op` cannot be started, or succeeds
   but returns an empty secret, a NUL byte or more than 64 KiB, the request goes
   to the fallback prompt. The user declined nothing in these cases.

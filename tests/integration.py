@@ -26,8 +26,9 @@ class IntegrationTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.scratch)
 
-    def write_config(self, grip=GRIP, op_program=ROOT / "tests/fixtures/op.py"):
+    def write_config(self, grip=GRIP, op_program=ROOT / "tests/fixtures/op.py", extra=""):
         self.config.write_text(
+            extra +
             f"op_program = {json.dumps(str(op_program))}\n"
             f"fallback_program = {json.dumps(str(ROOT / 'tests/fixtures/pinentry.py'))}\n"
             'timeout_seconds = 1\naccount = "test-account"\n[keys]\n'
@@ -90,6 +91,17 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("ERR 83886179", stdout)
         self.assertNotIn("SYNTHETIC_SECRET_MUST_NOT_LEAK", stdout + stderr)
         self.assertNotIn("GETPIN", self.fallback_log())
+
+    def test_prompt_policy_falls_back_after_failure_or_timeout(self):
+        self.write_config(extra='on_lookup_failure = "prompt"\n')
+        for mode in ("failure", "timeout"):
+            with self.subTest(mode=mode):
+                Path(self.env["TEST_FALLBACK_LOG"]).unlink(missing_ok=True)
+                stdout, stderr = self.run_session(PRELUDE + "GETPIN\nBYE\n", TEST_OP_MODE=mode)
+                self.assertNotIn("ERR 83886179", stdout)
+                self.assertIn("D manual-passphrase", stdout)
+                self.assertIn("GETPIN", self.fallback_log())
+                self.assertNotIn("SYNTHETIC_SECRET_MUST_NOT_LEAK", stdout + stderr)
 
     def test_unusable_secret_prompts_manually(self):
         for mode in ("oversized", "nul", "empty"):
