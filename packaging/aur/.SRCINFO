@@ -14,6 +14,6 @@ pkgbase = pinentry-op
 	optdepends = 1password-cli: the op CLI used to read passphrases (AUR)
 	options = !debug
 	source = pinentry-op-0.1.0.tar.gz::https://github.com/codegeek/pinentry-op/archive/refs/tags/v0.1.0.tar.gz
-	sha256sums = SKIP
+	sha256sums = 6fc8e132e16c89c2050a2616c7301e2cc353424b2d7ef6d786ba266350e286b3
 
 pkgname = pinentry-op
