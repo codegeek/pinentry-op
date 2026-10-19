@@ -6,6 +6,7 @@ rust-version = "1.85"
 description = "GnuPG pinentry bridge to the official 1Password CLI"
 license = "MIT"
 repository = "https://github.com/codegeek/pinentry-op"
+homepage = "https://github.com/codegeek/pinentry-op"
 
 [dependencies]
 libc = "0.2"
@@ -16,3 +17,7 @@ zeroize = "1"
 [profile.release]
 lto = true
 strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"

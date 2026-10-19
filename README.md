@@ -13,9 +13,31 @@ GnuPG keeps your private keys and performs decryption and signing. This program
 retrieves only their passphrases. Public-key encryption ordinarily needs no
 passphrase. Symmetric passphrases use the fallback prompt.
 
+## Install
+
+With Homebrew on macOS (Apple Silicon or Intel):
+
+```sh
+brew install codegeek/tap/pinentry-op
+```
+
+This installs `pinentry-op` at `$(brew --prefix)/bin/pinentry-op`, a path that
+stays the same across upgrades, and an example configuration at
+`$(brew --prefix)/share/pinentry-op/config.example.toml`. Install GnuPG, the
+1Password CLI and pinentry-mac separately:
+
+```sh
+brew install gnupg pinentry-mac
+brew install --cask 1password-cli
+```
+
+Prebuilt archives with SHA-256 checksums are also attached to each
+[GitHub release](https://github.com/codegeek/pinentry-op/releases). To build
+from source instead, see [Build and verify](#build-and-verify).
+
 ## Requirements
 
-- Rust 1.85 or newer to build (latest stable recommended).
+- Rust 1.85 or newer to build from source (latest stable recommended).
 - GnuPG, the official `op` CLI, and a fallback pinentry such as `pinentry-mac`.
 - 1Password desktop app with **Settings → Developer → Integrate with 1Password CLI** enabled.
 - Python 3 for subprocess tests; GnuPG for the optional real-GPG smoke test.
@@ -90,12 +112,16 @@ files or a shell PATH to find `op` or the fallback. The default config path uses
 the HOME inherited by the agent. To avoid agent environment propagation issues,
 use the default location.
 
-Install the release executable at a stable path of your choice. Back up
-`~/.gnupg/gpg-agent.conf`, then update its `pinentry-program` line:
+Back up `~/.gnupg/gpg-agent.conf`, then point its `pinentry-program` line at
+the installed executable. With Homebrew on Apple Silicon, that is:
 
 ```text
-pinentry-program /absolute/path/to/pinentry-op
+pinentry-program /opt/homebrew/bin/pinentry-op
 ```
+
+If you build from source, copy `target/release/pinentry-op` to a stable path of
+your choice and use that path. Avoid pointing at the build directory, which
+`cargo clean` or a failed rebuild can break.
 
 Restart the agent to use the change:
 
@@ -156,6 +182,21 @@ terminal. Working terminal CLI access does not guarantee agent access; verify
 the actual decryption and signing flows. This wrapper does not implement biometric UI or
 manage service-account tokens. It currently has no vault item picker, automatic
 key discovery, secret updates, or Windows support.
+
+## Releasing
+
+Releases are built by [dist](https://opensource.axo.dev/cargo-dist/) in
+`.github/workflows/release.yml` and configured in `dist-workspace.toml`.
+
+1. Update `version` in `Cargo.toml`, run `cargo build` to refresh `Cargo.lock`,
+   and commit.
+2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
+
+The workflow builds macOS archives for both architectures, creates the GitHub
+release, and pushes the updated formula to
+[codegeek/homebrew-tap](https://github.com/codegeek/homebrew-tap) using the
+`HOMEBREW_TAP_TOKEN` repository secret. After changing `dist-workspace.toml`,
+run `dist generate` to update the workflow, and `dist plan` to preview a release.
 
 ## References
 
