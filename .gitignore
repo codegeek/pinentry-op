@@ -2,3 +2,4 @@
 /.tools/
 /.worktrees/
 /config.toml
+/.idea/
