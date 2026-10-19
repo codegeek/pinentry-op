@@ -7,13 +7,20 @@ use zeroize::Zeroizing;
 pub const CANCELED: &str = "ERR 83886179 Operation cancelled";
 
 // Assuan lines are limited to 1000 bytes including the terminating newline.
+const MAX_LINE: usize = 1000;
+// Data lines stay well below MAX_LINE; each secret byte encodes to at most 3 bytes.
+const MAX_DATA_LINE: usize = 900;
+const MAX_ENCODED_BYTE: usize = 3;
+
 pub fn read_line(input: &mut impl BufRead) -> io::Result<Option<Zeroizing<Vec<u8>>>> {
-    let mut line = Zeroizing::new(Vec::with_capacity(1000));
-    let n = input.take(1001).read_until(b'\n', &mut line)?;
+    let mut line = Zeroizing::new(Vec::with_capacity(MAX_LINE));
+    let n = input
+        .take(MAX_LINE as u64 + 1)
+        .read_until(b'\n', &mut line)?;
     if n == 0 {
         return Ok(None);
     }
-    if n > 1000 || line.last() != Some(&b'\n') {
+    if n > MAX_LINE || line.last() != Some(&b'\n') {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "invalid Assuan line length",
@@ -33,10 +40,10 @@ pub fn send(output: &mut impl Write, line: &[u8]) -> io::Result<()> {
 }
 
 pub fn send_secret(output: &mut impl Write, secret: &[u8]) -> io::Result<()> {
-    let mut encoded = Zeroizing::new(Vec::with_capacity(903));
+    let mut encoded = Zeroizing::new(Vec::with_capacity(MAX_DATA_LINE));
     encoded.extend_from_slice(b"D ");
     for &byte in secret {
-        if encoded.len() > 897 {
+        if encoded.len() + MAX_ENCODED_BYTE > MAX_DATA_LINE {
             send(output, &encoded)?;
             // Wipe before reusing the allocation, rather than only shortening its length.
             use zeroize::Zeroize;
@@ -54,8 +61,13 @@ pub fn send_secret(output: &mut impl Write, secret: &[u8]) -> io::Result<()> {
     send(output, b"OK")
 }
 
-pub fn split(line: &str) -> (&str, &str) {
-    line.split_once(' ').unwrap_or((line, ""))
+// Splits on the first space. Bytes are not assumed to be UTF-8: only the
+// command verb must be text, and arguments pass through to the fallback unchanged.
+pub fn split(line: &[u8]) -> (&[u8], &[u8]) {
+    match line.iter().position(|&b| b == b' ') {
+        Some(i) => (&line[..i], &line[i + 1..]),
+        None => (line, b""),
+    }
 }
 
 #[derive(Default)]
@@ -125,6 +137,24 @@ mod tests {
         send_secret(&mut out, &vec![b'%'; 65536]).unwrap();
         assert!(out.split(|&b| b == b'\n').all(|line| line.len() < 1000));
         assert_eq!(out.iter().filter(|&&b| b == b'%').count(), 65536);
+    }
+
+    #[test]
+    fn data_lines_fill_up_to_the_limit() {
+        let mut out = Vec::new();
+        send_secret(&mut out, &vec![b'x'; 2000]).unwrap();
+        let lines: Vec<_> = out.split(|&b| b == b'\n').collect();
+        assert!(lines[0].len() > MAX_DATA_LINE - MAX_ENCODED_BYTE);
+        assert!(lines.iter().all(|line| line.len() <= MAX_DATA_LINE));
+    }
+
+    #[test]
+    fn splits_non_utf8_arguments() {
+        assert_eq!(
+            split(b"SETDESC caf\xe9 x"),
+            (&b"SETDESC"[..], &b"caf\xe9 x"[..])
+        );
+        assert_eq!(split(b"GETPIN"), (&b"GETPIN"[..], &b""[..]));
     }
 
     #[test]

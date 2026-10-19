@@ -7,10 +7,12 @@ import sys
 def emit(text):
     print(text, flush=True)
 
+# Assuan arguments are bytes; keep non-UTF-8 input intact rather than crashing.
+sys.stdin.reconfigure(encoding="utf-8", errors="surrogateescape")
 emit("OK test fallback")
 for line in sys.stdin:
     line = line.rstrip("\r\n")
-    with Path(os.environ["TEST_FALLBACK_LOG"]).open("a") as log:
+    with Path(os.environ["TEST_FALLBACK_LOG"]).open("a", encoding="utf-8", errors="surrogateescape") as log:
         log.write(line + "\n")
     command = line.split(" ", 1)[0]
     if command == "GETPIN":
@@ -28,6 +30,9 @@ for line in sys.stdin:
                 sys.exit(2)
     elif command == "OPTION" and line.endswith("unsupported"):
         emit("ERR 83886254 Unknown option")
+        continue
+    elif command == "BAREERR":
+        emit("ERR")
         continue
     elif command == "UNKNOWN":
         emit("ERR 83886275 Unknown command")

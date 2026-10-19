@@ -9,7 +9,13 @@ mod secret;
 use config::Config;
 use fallback::Fallback;
 use protocol::{read_line, send, send_secret, split, State, CANCELED};
-use std::{ffi::OsString, io, path::PathBuf};
+use secret::LookupError;
+use std::{
+    ffi::{OsStr, OsString},
+    io,
+    os::unix::ffi::OsStrExt,
+    path::PathBuf,
+};
 
 fn main() {
     if let Err(error) = run() {
@@ -31,6 +37,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         } else if arg == "--config" {
             config_path = Some(arguments.next().ok_or("--config requires a path")?.into());
+        } else if let Some(path) = arg.as_bytes().strip_prefix(b"--config=") {
+            if path.is_empty() {
+                return Err("--config requires a path".into());
+            }
+            config_path = Some(OsStr::from_bytes(path).into());
         } else {
             fallback_args.push(arg);
         }
@@ -50,11 +61,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let mut state = State::default();
     send(&mut output, b"OK pinentry-op ready")?;
     while let Some(line) = read_line(&mut input)? {
-        let text = std::str::from_utf8(&line).map_err(|_| "non-UTF-8 command")?;
-        let (command, argument) = split(text);
-        if command.is_empty() || command.starts_with('#') {
+        let (command, argument) = split(&line);
+        if command.is_empty() || command.starts_with(b"#") {
             continue;
         }
+        // Unknown non-UTF-8 verbs still reach the fallback, which rejects them.
+        let command = std::str::from_utf8(command).unwrap_or("");
         if command == "GETPIN" {
             let key = state.lookup_key().map(str::to_owned);
             if let Some(key) = key {
@@ -64,20 +76,26 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                         Ok(secret) => {
                             send(&mut output, b"S PASSWORD_FROM_CACHE")?;
                             send_secret(&mut output, &secret)?;
+                            continue;
                         }
-                        Err(_) => {
+                        Err(LookupError::Failed) => {
                             // CLI failures cannot reliably distinguish cancellation
                             // across versions: fail closed rather than open a new UI.
                             eprintln!("pinentry-op: 1Password lookup failed or was cancelled");
                             send(&mut output, CANCELED.as_bytes())?;
+                            continue;
+                        }
+                        Err(LookupError::Unavailable) => {
+                            eprintln!(
+                                "pinentry-op: 1Password lookup unavailable; prompting manually"
+                            );
                         }
                     }
-                    continue;
                 }
             }
         }
         if fallback.transact(&line, &mut input, &mut output)? {
-            state.accepted(command, argument);
+            state.accepted(command, &String::from_utf8_lossy(argument));
         }
         if command == "BYE" {
             break;

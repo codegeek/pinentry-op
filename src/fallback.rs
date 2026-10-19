@@ -64,7 +64,7 @@ impl Fallback {
             if line.as_slice() == b"OK" || line.starts_with(b"OK ") {
                 return Ok(true);
             }
-            if line.starts_with(b"ERR ") {
+            if line.as_slice() == b"ERR" || line.starts_with(b"ERR ") {
                 return Ok(false);
             }
             if line.as_slice() == b"INQUIRE" || line.starts_with(b"INQUIRE ") {

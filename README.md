@@ -73,7 +73,7 @@ absolute paths, without shell substitutions. Prefer vault and item IDs in secret
 references to survive renames. The configuration contains references, not secrets;
 keep it writable only by your user. Unknown TOML fields are rejected.
 
-`--config PATH` overrides `PINENTRY_OP_CONFIG`, which overrides the default path
+`--config PATH` (or `--config=PATH`) overrides `PINENTRY_OP_CONFIG`, which overrides the default path
 `~/.config/pinentry-op/config.toml`. The program does not depend on shell startup
 files or a shell PATH to find `op` or the fallback. The default config path uses
 the HOME inherited by the agent. To avoid agent environment propagation issues,
@@ -110,13 +110,18 @@ To restore your previous setup, restore the old `pinentry-program` line and run
 - **Missing mappings, symmetric operations, new passphrases, confirmations and
   protocol extensions:** delegate to the fallback. A persistent fallback receives
   all prompt state and handles inquiries such as passphrase-quality checks.
-- **CLI cancellation or failure:** return a cancellation error. Never silently
-  switch to a different prompt after a failed mapped lookup. CLI failures are
-  deliberately not classified from human-readable error text.
-- **Timeout:** kill and reap `op` after `timeout_seconds`, or an accepted positive
-  `SETTIMEOUT` value if shorter. The fallback controls its own UI timeout.
+- **CLI cancellation or failure:** if `op` exits unsuccessfully or times out,
+  return a cancellation error rather than opening a second prompt, because a
+  cancelled 1Password request cannot be told apart from other failures. CLI
+  failures are deliberately not classified from human-readable error text.
+- **CLI unavailable or unusable secret:** if `op` cannot be started, or succeeds
+  but returns an empty secret, a NUL byte or more than 64 KiB, the request goes
+  to the fallback prompt. The user declined nothing in these cases.
+- **Timeout:** kill the `op` process group (including any helpers) and reap `op`
+  after `timeout_seconds`, or an accepted positive `SETTIMEOUT` value if shorter.
+  The fallback controls its own UI timeout.
 - **Exact secret bytes:** use `op read --no-newline`; preserve whitespace and
-  encode `%`, CR and LF. Reject NUL bytes and secrets larger than 64 KiB.
+  encode `%`, CR and LF.
 
 The fallback is a required dependency and starts for every pinentry session,
 including sessions serviced entirely by 1Password. It is never auto-approved on
