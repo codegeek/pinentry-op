@@ -1,6 +1,6 @@
 # Maintainer: Guillermo Castro <github at codegeek dot dev>
 pkgname=pinentry-op
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
 pkgdesc="GnuPG pinentry bridge to the official 1Password CLI"
 arch=('x86_64' 'aarch64')
@@ -14,7 +14,7 @@ options=('!debug')
 optdepends=('1password-cli: the op CLI used to read passphrases (AUR)')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 # Run updpkgsums after changing pkgver: the release tarball must exist first.
-sha256sums=('6fc8e132e16c89c2050a2616c7301e2cc353424b2d7ef6d786ba266350e286b3')
+sha256sums=('1d46bb4a9b0d8f10b81a8929c727363bf4ef0edd26ba063e658eda6fc7146278')
 
 prepare() {
   cd "$pkgname-$pkgver"

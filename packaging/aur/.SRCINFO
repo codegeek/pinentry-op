@@ -1,6 +1,6 @@
 pkgbase = pinentry-op
 	pkgdesc = GnuPG pinentry bridge to the official 1Password CLI
-	pkgver = 0.1.0
+	pkgver = 0.1.1
 	pkgrel = 1
 	url = https://github.com/codegeek/pinentry-op
 	arch = x86_64
@@ -13,7 +13,7 @@ pkgbase = pinentry-op
 	depends = gnupg
 	optdepends = 1password-cli: the op CLI used to read passphrases (AUR)
 	options = !debug
-	source = pinentry-op-0.1.0.tar.gz::https://github.com/codegeek/pinentry-op/archive/refs/tags/v0.1.0.tar.gz
-	sha256sums = 6fc8e132e16c89c2050a2616c7301e2cc353424b2d7ef6d786ba266350e286b3
+	source = pinentry-op-0.1.1.tar.gz::https://github.com/codegeek/pinentry-op/archive/refs/tags/v0.1.1.tar.gz
+	sha256sums = 1d46bb4a9b0d8f10b81a8929c727363bf4ef0edd26ba063e658eda6fc7146278
 
 pkgname = pinentry-op
