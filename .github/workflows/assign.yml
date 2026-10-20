@@ -1,0 +1,26 @@
+name: Assign new issues and pull requests
+on:
+  issues:
+    types: [opened]
+  # pull_request_target runs with this repository's token, so it can also assign
+  # Dependabot and fork PRs, whose pull_request runs only get a read-only token.
+  # It is safe here because the job never checks out or runs PR code.
+  pull_request_target:
+    types: [opened]
+permissions:
+  issues: write
+  pull-requests: write
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      # Event values go through env rather than ${{ }} in the script, so issue
+      # or PR content can never be interpreted as shell. The issues endpoint
+      # assigns both issues and pull requests.
+      - name: Assign to the maintainer
+        run: gh api --method POST "repos/$REPO/issues/$NUMBER/assignees" -f "assignees[]=$ASSIGNEE" --silent
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          ASSIGNEE: codegeek

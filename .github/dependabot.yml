@@ -6,6 +6,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Also assigned by the assign workflow; this covers PRs if that cannot run.
+    assignees: [codegeek]
     groups:
       cargo:
         update-types: [minor, patch]
