@@ -49,7 +49,7 @@ body:
   - type: input
     id: versions
     attributes:
-      label: GnuPG and 1Password CLI versions
+      label: GnuPG and op CLI versions
       description: Output of `gpg --version | head -1` and `op --version`.
     validations:
       required: true
