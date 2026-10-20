@@ -1,0 +1,19 @@
+name: Assign new issues
+on:
+  issues:
+    types: [opened]
+permissions:
+  issues: write
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      # Event values go through env rather than ${{ }} in the script, so issue
+      # content can never be interpreted as shell.
+      - name: Assign to the maintainer
+        run: gh issue edit "$NUMBER" --repo "$REPO" --add-assignee "$ASSIGNEE"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+          ASSIGNEE: codegeek

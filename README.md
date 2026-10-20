@@ -63,7 +63,10 @@ pulls in `pinentry`, which provides `pinentry-gnome3`, `pinentry-qt` and
 ### Prebuilt archives
 
 Prebuilt archives with SHA-256 checksums are also attached to each
-[GitHub release](https://github.com/codegeek/pinentry-op/releases). To build
+[GitHub release](https://github.com/codegeek/pinentry-op/releases). Each archive
+also has signed build provenance; verify a download with
+`gh attestation verify <archive> --repo codegeek/pinentry-op`. v0.1.0 was
+published before this was added and has none. To build
 from source instead, see [Build and verify](#build-and-verify).
 
 ## Requirements

@@ -21,3 +21,5 @@ tap = "codegeek/homebrew-tap"
 publish-jobs = ["homebrew"]
 # Extra files to ship in each archive; the Homebrew formula installs them into pkgshare
 include = ["config.example.toml"]
+# Sign build provenance for each release archive (verify with gh attestation verify)
+github-attestations = true
