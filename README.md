@@ -1,5 +1,8 @@
 # pinentry-op
 
+[![CI](https://github.com/codegeek/pinentry-op/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/codegeek/pinentry-op/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/codegeek/pinentry-op)](https://github.com/codegeek/pinentry-op/releases/latest)
+
 A Rust pinentry bridge that supplies GPG key passphrases from the official
 1Password CLI, for decryption and signing, with a normal pinentry handling
 manual entry and other interactions. Supports macOS and Linux; Unix platforms only.
