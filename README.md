@@ -240,9 +240,13 @@ key discovery, secret updates, or Windows support.
 Releases are built by [dist](https://opensource.axo.dev/cargo-dist/) in
 `.github/workflows/release.yml` and configured in `dist-workspace.toml`.
 
-1. Update `version` in `Cargo.toml`, run `cargo build` to refresh `Cargo.lock`,
+1. In `CHANGELOG.md`, move the **Unreleased** entries under a new
+   `## [X.Y.Z] - YYYY-MM-DD` heading and update the comparison links at the
+   bottom. The workflow uses that section as the GitHub release notes; preview
+   them with `dist plan --tag vX.Y.Z --output-format=json`.
+2. Update `version` in `Cargo.toml`, run `cargo build` to refresh `Cargo.lock`,
    and commit.
-2. Tag and push: `git tag v0.1.0 && git push origin v0.1.0`.
+3. Tag and push: `git tag -a vX.Y.Z -m "pinentry-op X.Y.Z" && git push origin vX.Y.Z`.
 
 The workflow builds archives for macOS and Linux (x86_64 and ARM64), creates the
 GitHub release, and pushes the updated formula to

@@ -1,0 +1,76 @@
+name: Bug report
+description: Something does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Never paste passphrases.** Redact vault and item IDs from `op://` references if you consider them private.
+        For security vulnerabilities, use [private reporting](https://github.com/codegeek/pinentry-op/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead. Include any error shown by gpg.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. echo test | gpg --clearsign -u <KEY>
+        2. Cancel the 1Password prompt
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: pinentry-op version
+      description: Output of `pinentry-op --version`.
+      placeholder: pinentry-op 0.1.1
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Installed with
+      options: [Homebrew, Arch PKGBUILD, Release archive, Built from source]
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system
+      placeholder: macOS 26.0 (Apple Silicon), or CachyOS with KDE Plasma
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: GnuPG and 1Password CLI versions
+      description: Output of `gpg --version | head -1` and `op --version`.
+    validations:
+      required: true
+  - type: input
+    id: fallback
+    attributes:
+      label: Fallback pinentry
+      placeholder: /opt/homebrew/bin/pinentry-mac
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Configuration
+      description: Your `config.toml`, with private values redacted. It contains secret references, never secrets.
+      render: toml
+  - type: textarea
+    id: lookup
+    attributes:
+      label: Manual lookup result
+      description: |
+        If a 1Password lookup fails, the output of `op read --no-newline "<your reference>" | wc -c`.
+        This shows the CLI's own error without printing the passphrase.
+      render: text
